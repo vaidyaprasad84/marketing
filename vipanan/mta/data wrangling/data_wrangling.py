@@ -1,16 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 import pandas as pd
 import numpy as np
 from datetime import datetime,timedelta
-
-
-# In[ ]:
-
 
 class random_dataframe:
     def __init__(self):
@@ -60,22 +50,23 @@ class random_dataframe:
     
 random_dataframe = random_dataframe()
 
-
-# In[ ]:
-
-
 class attribution_df:
     def __init__(self):
         pass
     
     def get_data_in_attr_window(self,
                                 attribution_window = 30,
+                                path_transforms = 'unique',
                                 dataframe = pd.DataFrame({})
                                ):
         
-        filter_df = df[df['conversion']==1]
-
-        return filter_df
+        filter_df = dataframe[dataframe['conversion']==1][['user_id','event_date']].rename(columns = {'event_date':'conv_date'})
+        dataframe = pd.merge(dataframe,filter_df,on = 'user_id',how = 'outer')
+        dataframe['conv_date'] = dataframe['conv_date'].fillna(dataframe['event_date'])
+        dataframe['delta'] = (dataframe['conv_date'] - dataframe['event_date']).dt.days
+        dataframe = dataframe[((dataframe['delta']<=attribution_window) & 
+                              (dataframe['delta'] >=0))].drop(columns =['conv_date','delta'])
+        return dataframe
     
 attribution_df = attribution_df()
 
