@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.optimize import fsolve
 
 class heuristics:
     def __init__(self):
@@ -60,5 +61,40 @@ class heuristics:
                                                                                                'index':'channel'})
         return ndf
     
+    
+    def get_time_decay_attribution(self,
+                                   dataframe = pd.DataFrame({}),
+                                   decay_type='exponential',
+                                   A = 1):
+        
+        conv_df = dataframe[dataframe['conversion']==1][['user_id']]
+        conv_df = pd.merge(dataframe,conv_df,on = 'user_id', how = 'inner')
+        conv_df1 = conv_df.groupby(['user_id']).size().reset_index().rename(columns = {0:'count'})
+        
+        if decay_type == 'linear':
+            delta
+        elif decay_type == 'exponential':
+            d = dict({1:[1]})
+            n = 1
+            def func(x):
+                return (1-np.exp((n+1)*x[0]))/(1-np.exp(x[0])) - (1+A)/A
+            
+            exp_conv_attr = []
+            for i in range(len(conv_df1)):
+                n = conv_df1.iloc[i]['count']
+                if n not in d:
+                    k = fsolve(func,[1])[0]
+                    wt = []
+                    for j in range(1,n+1):
+                        wt.append(round(A*np.exp(k*j),3))
+                    wt.reverse()
+                    d[n] = wt
+                exp_conv_attr += d[n]
+            
+            conv_df['exp_conv_attr'] = exp_conv_attr
+            
+            ans = pd.DataFrame(conv_df.groupby(['channel'])['exp_conv_attr'].sum()).reset_index()
+            
+            return ans
+                                 
 heuristics = heuristics()
-
