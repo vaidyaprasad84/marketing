@@ -67,14 +67,14 @@ class heuristics:
                                    decay_type='exponential',
                                    A = 1):
         '''
-        Here a default value of A = 1 is added. The user has an option to of course change the A.
-        But changing A can lead to different solution and A = 1 is recommended. 
+        Here a default value of A = 1 is added. The user has an option to change the value of A.
+        But changing A can lead to different solutions and A = 1 is recommended. 
         Please refer to documentation for more details. 
         
         There are 3 options for decay time. 
-        1. Exponential --> The last channel has maximum attribution and the attribution decays exponentially as go from last to first
-        2. Linear --> The last channel has maximum attribution and the attribution decays linearly as go from last to first
-        3. None --> There is no time decay. Meaning all channels have equal attribution. This is same as linear MTA model.
+        1. Exponential --> The last channel has maximum attribution and the attribution decays exponentially as one goes from last to first
+        2. Linear --> The last channel has maximum attribution and the attribution decays linearly as one goes from last to first
+        3. None --> There is no time decay. All channels have equal attribution. This is same as linear MTA model.
         '''
         
         conv_df = dataframe[dataframe['conversion']==1][['user_id']]
@@ -90,17 +90,26 @@ class heuristics:
             
             for i in range(len(conv_df1)):
                 n = conv_df1.iloc[i]['count']
-                if n not in d: # the look up is applied to minize computation
+                if n not in d: # the look up is applied to minimize computation
                     k = fsolve(func,[1])[0]
                     wt = []
                     for j in range(1,n+1):
                         wt.append(round(A*np.exp(k*j),3))
-                    wt.reverse() # A reverse function has to be applied. Because the fn gives value from last channel to first while input data is sored from first to last.
+                    wt.reverse() # A reverse function has to be applied. Because the function gives value from last channel to first while input data is sorted from first to last.
                     d[n] = wt
                 conv_attr += d[n]
                 
         elif decay_type == 'linear': # Linear decay model
-            ans = 1
+            d = dict({1:[1]}) # When there is just one channel, it will get 100% attribution
+            for i in range(len(conv_df1)):
+                n = conv_df1.iloc[i]['count']
+                if n not in d:
+                    am = 2/(n*(n+1)) # am = arthimetic mean
+                    conv = list(np.round(np.array(range(1,n+1))*am,3))
+                    d[n] = conv
+                    
+                conv_attr += d[n]
+            
         elif decay_type == None: #Linear MTA
             for i in range(len(conv_df1)):
                 n = conv_df1.iloc[i]['count']
