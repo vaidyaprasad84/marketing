@@ -3,21 +3,30 @@ import numpy as np
 from datetime import datetime,timedelta
 
 class random_dataframe:
+    '''
+    This class provides user with the flexibility to build a random dataframe if the user doesn't want to use actual data.
+    It gives user flexibility to choose their seed, number of rows, channels, channel weights, lead rate, conversion rate, start_date
+    
+    '''
+    
     def __init__(self):
         pass
     
     def create_random_df(self,
                          seed=None,
-                      nrows=10000,
-                      channels = ['FB','X','Email','Direct','Google'], 
-                      channel_weights = [0.2]*5,
-                      conversion_rate = 0.1,
-                      start_date = None,
-                      delta = None):
+                         nrows=10000,
+                         channels = ['FB','X','Email','Direct','Google'], 
+                         channel_weights = [0.2]*5,
+                         lead_rate = 0.3,
+                         conversion_rate = 0.1):
+        
         np.random.seed(seed)
 
         user_id = np.random.choice(2000,nrows)
         chan_list = np.random.choice(len(channels),nrows,p=channel_weights)
+        lead = [0,1]
+        lead_weights = [1-lead_rate,lead_rate]
+        leads = np.random.choice(2,nrows,p=lead_weights)
         conv = [0,1]
         conv_weights = [1-conversion_rate,conversion_rate]
         conversions = np.random.choice(2,nrows,p=conv_weights)
@@ -27,10 +36,11 @@ class random_dataframe:
         df = pd.DataFrame({'user_id':user_id,
                           'channel_id':chan_list,
                           'event_date':dates_list,
+                          'lead_generation': leads,
                           'conversion':conversions})
         chan_df = pd.DataFrame({'channel':channels,'channel_id':list(range(len(channels)))})
         df = pd.merge(df,chan_df,on = 'channel_id',how = 'inner')
-        df = df[['user_id','channel','event_date','conversion']]
+        df = df[['user_id','channel','event_date','lead_generation','conversion']]
         df = df.sort_values(by = ['user_id','event_date']).reset_index().drop(columns = ['index'])
         conv_df = df[df['conversion']==1]
         conv_df = pd.DataFrame(conv_df.groupby(['user_id'])['event_date'].max()).reset_index()
@@ -55,9 +65,9 @@ class attribution_df:
         pass
     
     def get_data_in_attr_window(self,
+                                dataframe = pd.DataFrame({}),
                                 attribution_window = 30,
-                                path_transforms = 'unique',
-                                dataframe = pd.DataFrame({})
+                                path_transforms = 'unique'
                                ):
         
         filter_df = dataframe[dataframe['conversion']==1][['user_id','event_date']].rename(columns = {'event_date':'conv_date'})
