@@ -118,6 +118,39 @@ class heuristics:
         conv_df['conv_attr'] = conv_attr
         ans = pd.DataFrame(conv_df.groupby(['channel'])['conv_attr'].sum()).reset_index()   
         return ans
+    
+    def position_based_attribution(self, 
+                                   dataframe = pd.DataFrame({}), 
+                                   position = 'U'):
+        
+        '''
+        
+        This function gives attribution based on a positon of the channel. It has two alternatives. 
+        U--> Gives attribution based on U. The first channel is 40%, last channel is 40% 
+        and rest of the other channels is divived equally in 20%.
+        W --> Gives attribution based on W. The first touch is 30%, conversion is 30% and lead/opportunity creation is 30%.
+        Rest others are split equally. 
+        
+        '''
+        conv_df = dataframe[dataframe['conversion']==1][['user_id']]
+        conv_df = pd.merge(dataframe,conv_df,on = 'user_id', how = 'inner')
+        conv_df1 = conv_df.groupby(['user_id']).size().reset_index().rename(columns = {0:'count'})
+        conv_attr = []
+        
+        if position == 'U':
+            d = {1:[1],2:[0.5,0.5],3:[0.4,0.2,0.4],4:[0.4,0.1,0.1,0.4]}
+            for i in range(len(conv_df1)):
+                n = conv_df1.iloc[i]['count']
+                if n not in d:
+                    conv = [0.4] + [round(0.2/(n-2),3)]*(n-2) + [0.4]
+                    d[n] = conv
+                
+                conv_attr += d[n]
+        
+        conv_df['conv_attr'] = conv_attr
+        ans = pd.DataFrame(conv_df.groupby(['channel'])['conv_attr'].sum()).reset_index()   
+        return ans
+            
                                  
 heuristics = heuristics()
 
