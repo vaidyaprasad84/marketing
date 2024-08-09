@@ -41,6 +41,12 @@ class random_dataframe:
         chan_df = pd.DataFrame({'channel':channels,'channel_id':list(range(len(channels)))})
         df = pd.merge(df,chan_df,on = 'channel_id',how = 'inner')
         df = df[['user_id','channel','event_date','lead_generation','conversion']]
+        time_df = pd.DataFrame(df.groupby(['user_id','event_date']).size()).reset_index()
+        df = pd.merge(df,time_df,on = ['user_id','event_date'],how = 'left')
+        time_df = df[df[0]>1].drop(columns = 0)
+        df = df[df[0]==1].drop(columns = 0)
+        time_df = time_df.sample(frac=1).drop_duplicates(subset='user_id')
+        df = pd.concat([df,time_df])
         df = df.sort_values(by = ['user_id','event_date']).reset_index().drop(columns = ['index'])
         conv_df = df[df['conversion']==1]
         conv_df = pd.DataFrame(conv_df.groupby(['user_id'])['event_date'].max()).reset_index()
@@ -79,4 +85,3 @@ class attribution_df:
         return dataframe
     
 attribution_df = attribution_df()
-
