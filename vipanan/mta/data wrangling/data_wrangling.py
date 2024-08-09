@@ -1,11 +1,21 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 import pandas as pd
 import numpy as np
 from datetime import datetime,timedelta
 
+
+# In[ ]:
+
+
 class random_dataframe:
     '''
     This class provides user with the flexibility to build a random dataframe if the user doesn't want to use actual data.
-    It gives user flexibility to choose their seed, number of rows, channels, channel weights, lead rate, conversion rate, start_date
+    It gives user flexibility to choose their seed, number of rows, channels, channel weights, lead rate, conversion rate
     
     '''
     
@@ -20,8 +30,9 @@ class random_dataframe:
                          lead_rate = 0.3,
                          conversion_rate = 0.1):
         
-        np.random.seed(seed)
-
+        np.random.seed(seed) # Set your seed to have repeatability. 
+        
+        #Code to generate random values
         user_id = np.random.choice(2000,nrows)
         chan_list = np.random.choice(len(channels),nrows,p=channel_weights)
         lead = [0,1]
@@ -43,11 +54,15 @@ class random_dataframe:
         df = df[['user_id','channel','event_date','lead_generation','conversion']]
         time_df = pd.DataFrame(df.groupby(['user_id','event_date']).size()).reset_index()
         df = pd.merge(df,time_df,on = ['user_id','event_date'],how = 'left')
+        
+        # This piece of code below ensures that there are no duplicates in event_date per user to mimic real life users. 
         time_df = df[df[0]>1].drop(columns = 0)
         df = df[df[0]==1].drop(columns = 0)
         time_df = time_df.sample(frac=1).drop_duplicates(subset='user_id')
         df = pd.concat([df,time_df])
         df = df.sort_values(by = ['user_id','event_date']).reset_index().drop(columns = ['index'])
+        
+        #This piece of code below ensures that there is only 1 conversion per user. 
         conv_df = df[df['conversion']==1]
         conv_df = pd.DataFrame(conv_df.groupby(['user_id'])['event_date'].max()).reset_index()
         conv_df['conv'] = 1
@@ -62,9 +77,26 @@ class random_dataframe:
         df = df.drop(columns = ['conversion']).rename(columns = {'conv':'conversion'})
         df['conversion'] = df['conversion'].astype('int')
         df = df.drop_duplicates().reset_index().drop(columns = ['index'])
+        
+        #This piece of code ensures that there is at least one lead generation event on or before conversion.
+        
+        conv_df = df[df['conversion']==1][['user_id','event_date']].rename(columns = {'event_date':'conv_date'})
+        conv_df = pd.merge(df,conv_df,on = 'user_id',how = 'inner')
+        conv_df['delta'] = (conv_df['conv_date'] - conv_df['event_date']).dt.days
+        conv_df = conv_df[conv_df['delta']>=0].drop(columns =['conv_date','delta'])
+        user_df = pd.DataFrame(conv_df.groupby(['user_id'])['lead_generation'].sum()).reset_index().rename(columns = {'lead_generation':'count'})
+        conv_df = pd.merge(conv_df,user_df,on='user_id',how = 'left')
+        conv_df = conv_df[conv_df['count']==0].sample(frac=1).drop_duplicates(subset='user_id')
+        df = pd.merge(df,conv_df[['user_id','event_date']],on = ['user_id','event_date'],how = 'left', indicator = True)
+        df['lead_generation'] = np.where(df['_merge']=='both',1,df['lead_generation'])
+        df = df.drop(columns = ['_merge'])
         return df
     
 random_dataframe = random_dataframe()
+
+
+# In[ ]:
+
 
 class attribution_df:
     def __init__(self):
@@ -85,3 +117,4 @@ class attribution_df:
         return dataframe
     
 attribution_df = attribution_df()
+
