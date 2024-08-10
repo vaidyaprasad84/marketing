@@ -13,15 +13,6 @@ class heuristics:
         dataframe = pd.merge(dataframe,conv_df,on = 'user_id',how = 'inner')
         ndf = dataframe.groupby(['user_id'])['event_date'].min().reset_index()
         dataframe = pd.merge(dataframe,ndf,on =['user_id','event_date'],how = 'inner')
-        ndf = pd.DataFrame(dataframe['user_id'].value_counts()).reset_index().rename(columns ={'user_id':'count',
-                                                                                               'index':'user_id'})
-        ndf = ndf[ndf['count']>1]
-        if len(ndf) > 0:
-            dataframe = pd.merge(dataframe,ndf,on = 'user_id',how = 'outer',indicator = True)
-            ndf = dataframe[dataframe['_merge']=='both']
-            ndf = ndf.sample(frac=1).drop_duplicates(subset='user_id')
-            dataframe = dataframe[dataframe['_merge']=='left_only']
-            dataframe = pd.concat([dataframe,ndf])
         ndf = pd.DataFrame(dataframe['channel'].value_counts()).reset_index().rename(columns ={'channel':'conversions',
                                                                                                'index':'channel'})
         return ndf
