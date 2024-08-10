@@ -128,7 +128,7 @@ class heuristics:
         conv_df1 = conv_df.groupby(['user_id']).size().reset_index().rename(columns = {0:'count'})
         conv_attr = []
         
-        if position == 'U':
+        if position == 'U': 
             d = {1:[1],2:[0.5,0.5],3:[0.4,0.2,0.4],4:[0.4,0.1,0.1,0.4]}
             for i in range(len(conv_df1)):
                 n = conv_df1.iloc[i]['count']
@@ -137,11 +137,46 @@ class heuristics:
                     d[n] = conv
                 
                 conv_attr += d[n]
-        
+    
+        elif position == 'W': 
+            for i in range(len(conv_df1)):
+                n = conv_df1.iloc[i]['count']
+                uid = conv_df1.iloc[i]['user_id']
+                temp_list = list(conv_df[conv_df['user_id']==uid]['lead_generation'])
+                ind = temp_list.index(1) # To find the lowest index within lead generation for W attribution.
+                if n == 1: # To cover the edge case when n = 1
+                    attr = [1]
+                elif n == 2: # To cover the edge case when n = 2
+                    if ind == 0:
+                        attr = [0.7,0.3]
+                    else:
+                        attr = [0.3,0.7]
+                elif n == 3: # To cover the edge case when n = 3
+                    if ind == 0:
+                        attr = [0.6,0.1,0.3]
+                    elif ind == 1:
+                        attr = [0.3,0.3,0.4]
+                    else:
+                        attr = [0.3,0.1,0.6]
+                else: # To cover all the other cases when n >= 4. However, within that has also some edge cases. 
+                    if ind == 0:
+                        attr = [0.1/(n-2)]*n
+                        attr[0] = 0.6
+                        attr[n-1] = 0.3
+                    elif ind == n-1:
+                        attr = [0.1/(n-2)]*n
+                        attr[0] = 0.3
+                        attr[n-1] = 0.6
+                    else:
+                        attr = [0.1/(n-3)]*n
+                        attr[ind] = 0.3
+                        attr[0] = 0.3
+                        attr[n-1] = 0.3
+                    
+                conv_attr += attr
         conv_df['conv_attr'] = conv_attr
         ans = pd.DataFrame(conv_df.groupby(['channel'])['conv_attr'].sum()).reset_index()   
         return ans
-            
                                  
 heuristics = heuristics()
 
