@@ -6,3 +6,5 @@
 4. Finish exponential attribution -- Completed 8.4.
 5. Add documentation for why choosing A = 1 is best for exponential decay. What happens if we decrease or increase value of A. 
 6. Add comments to all the codes
+7. Add markov chain monte carlo method
+8. update transition matrix code to just pull it once. prev method etc. .
