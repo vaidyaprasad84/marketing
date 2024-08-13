@@ -1,16 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 import pandas as pd
 import numpy as np
 from datetime import datetime,timedelta
-
-
-# In[ ]:
-
 
 class random_dataframe:
     '''
@@ -92,13 +82,9 @@ class random_dataframe:
         df = df.drop(columns = ['_merge'])
         return df
     
-random_dataframe = random_dataframe()
+# random_dataframe = random_dataframe()
 
-
-# In[ ]:
-
-
-class attribution_df:
+class attribution_subset:
     def __init__(self):
         pass
     
@@ -116,5 +102,4 @@ class attribution_df:
                               (dataframe['delta'] >=0))].drop(columns =['conv_date','delta'])
         return dataframe
     
-attribution_df = attribution_df()
-
+# attribution_df = attribution_df()
