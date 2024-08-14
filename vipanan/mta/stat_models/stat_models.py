@@ -35,6 +35,8 @@ class markov_chain_attribution:
                         tm[cur_index+1,num_channels+1] += 1   
         col_names = channel_list + ['Conversion','Non_Conversion']
         tm = pd.DataFrame(tm,columns = col_names)
+        tm.loc[:,tm.columns]=tm.div(tm.sum(1),0)
+        tm = round(tm,3)
         row_index = ['Start'] + channel_list
         tm = tm.set_index(keys = [row_index])
         return tm
@@ -71,3 +73,12 @@ class markov_chain_attribution:
         removal_effect['conv_attr'] = removal_effect['Normalized Removal Effect']*total_conv
         removal_effect = removal_effect[['channel','conv_attr']]
         return removal_effect
+    
+# ans1 = ans.copy()
+# ans1['Start'] = 0
+# pan = pd.DataFrame(np.zeros([2,8]))
+# cols = ['Start'] + ans1.columns.tolist()[:-1]
+# ans1 = ans1[cols]
+# pan.columns = cols
+# pan = pan[cols]
+# ans1 = pd.concat([ans1,pan])
