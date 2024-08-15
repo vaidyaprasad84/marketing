@@ -9,37 +9,20 @@ class markov_chain_attribution:
     def get_transition_matrix (self, 
                                dataframe = pd.DataFrame()
                               ):
-        channel_list = dataframe['channel'].value_counts().index.tolist()
-        num_channels = len(channel_list)
-        tm = np.zeros((num_channels+1,num_channels+2))
-        user_list = dataframe['user_id'].value_counts().index.tolist()
-#         user_list.sort()
-        
-        for i in range(len(user_list)):
-            sub_df = dataframe[dataframe['user_id']==user_list[i]].reset_index()
-            n = len(sub_df)
-            for j in range(n):
-                cur_channel = sub_df.iloc[j]['channel']
-                cur_index = channel_list.index(cur_channel) 
-                if j == 0:
-                    tm[j,cur_index] += 1
-                else:
-                    prev_channel = sub_df.iloc[j-1]['channel']
-                    prev_index = channel_list.index(prev_channel)
-                    tm[prev_index+1,cur_index] += 1
-                if n == 1 or j == n-1:    
-                    conv = sub_df.iloc[j]['conversion']
-                    if conv == 1:
-                        tm[cur_index+1,num_channels] += 1
-                    else:
-                        tm[cur_index+1,num_channels+1] += 1   
-        col_names = channel_list + ['Conversion','Non_Conversion']
-        tm = pd.DataFrame(tm,columns = col_names)
-        tm.loc[:,tm.columns]=tm.div(tm.sum(1),0)
-        tm = round(tm,3)
-        row_index = ['Start'] + channel_list
-        tm = tm.set_index(keys = [row_index])
-        return tm
+        dataframe = dataframe.set_index("user_id")
+        lagged = dataframe.groupby(level="user_id").shift(-1)[['channel']].rename(columns = {'channel':'nxt_channel'})
+        dataframe = pd.concat([dataframe,lagged],axis = 1)
+        dataframe['nxt_channel'] =  dataframe['nxt_channel'].fillna(dataframe['conversion'])
+        dataframe = dataframe.reset_index()
+        pivot_df = pd.pivot_table(dataframe,values = 'user_id', index = 'channel',columns = ['nxt_channel'], aggfunc = 'count')
+        start_df = pd.DataFrame(dataframe.groupby(['user_id']).first()['channel'].value_counts()).rename(columns={'channel':'Start'}).T
+        pivot_df = pd.concat([start_df,pivot_df]).fillna(0).rename(columns = {0:'Non_Conversion',1:'Conversion'})
+        pivot_df.loc[:,pivot_df.columns]=pivot_df.div(pivot_df.sum(1),0)
+        pivot_df = round(pivot_df,3)
+        cols = pivot_df.columns.to_list()
+        pivot_df = pd.concat([pivot_df,pd.DataFrame(np.zeros((2,len(cols))),columns = cols).set_axis(['Conversion',
+                                                                                                      'Non_Conversion'])])
+        return pivot_df
     
     def get_removal_effects (self, 
                              dataframe = pd.DataFrame({})
@@ -73,12 +56,4 @@ class markov_chain_attribution:
         removal_effect['conv_attr'] = removal_effect['Normalized Removal Effect']*total_conv
         removal_effect = removal_effect[['channel','conv_attr']]
         return removal_effect
-    
-# ans1 = ans.copy()
-# ans1['Start'] = 0
-# pan = pd.DataFrame(np.zeros([2,8]))
-# cols = ['Start'] + ans1.columns.tolist()[:-1]
-# ans1 = ans1[cols]
-# pan.columns = cols
-# pan = pan[cols]
-# ans1 = pd.concat([ans1,pan])
+
