@@ -9,19 +9,32 @@ class markov_chain_attribution:
     def get_transition_matrix (self, 
                                dataframe = pd.DataFrame()
                               ):
+        '''
+        
+        We assume the conversion paths to follow markov chain. 
+        This function is used to create probability transition matrix. 
+        
+        '''
         dataframe = dataframe.set_index("user_id")
+        # lagged df is created to get next transition state (next channel in this case) to build the transition matrix.
         lagged = dataframe.groupby(level="user_id").shift(-1)[['channel']].rename(columns = {'channel':'nxt_channel'})
         dataframe = pd.concat([dataframe,lagged],axis = 1)
+        # Both conversion and non-conversions are assumed a terminal states. 
         dataframe['nxt_channel'] =  dataframe['nxt_channel'].fillna(dataframe['conversion'])
         dataframe = dataframe.reset_index()
         pivot_df = pd.pivot_table(dataframe,values = 'user_id', index = 'channel',columns = ['nxt_channel'], aggfunc = 'count')
         start_df = pd.DataFrame(dataframe.groupby(['user_id']).first()['channel'].value_counts()).rename(columns={'channel':'Start'}).T
         pivot_df = pd.concat([start_df,pivot_df]).fillna(0).rename(columns = {0:'Non_Conversion',1:'Conversion'})
         pivot_df.loc[:,pivot_df.columns]=pivot_df.div(pivot_df.sum(1),0)
-        pivot_df = round(pivot_df,3)
         cols = pivot_df.columns.to_list()
         pivot_df = pd.concat([pivot_df,pd.DataFrame(np.zeros((2,len(cols))),columns = cols).set_axis(['Conversion',
                                                                                                       'Non_Conversion'])])
+        pivot_df.loc['Conversion','Conversion'] = 1 # Terminal State. So probability to stay in the same state is 1. 
+        pivot_df.loc['Non_Conversion','Non_Conversion'] = 1 # Terminal State. So probability to stay in the same state is 1. 
+        pivot_df['Start'] = 0.000 # There is no way that user can go back to start state. Its just a mathematical construct. User can never go to start state once journey beguns.
+        pivot_df = round(pivot_df,3)
+        cols = pivot_df.index.values.tolist()
+        pivot_df = pivot_df[cols]
         return pivot_df
     
     def get_removal_effects (self, 
