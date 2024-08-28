@@ -72,6 +72,8 @@ class markov_chain_attribution:
         
         channels = tm.columns.tolist()[1:-2]
         
+        # removal effect calculations
+        
         for i in range(len(channels)):
             array = tm.copy()
             array[channels[i]] = 0
@@ -122,10 +124,14 @@ class markov_chain_attribution:
 
             ans = pd.DataFrame({'channel':channel_list, 'Removal Effect':removal_effect, 
                                 'Normalized Removal Effect':norm_removal_effect})
+            ans = np.round(ans,3)
         
         elif removal_type == 'transition_matrix':
             matrix = self.get_markov_reward_value(dataframe)
-            ans = matrix
+            ans = pd.DataFrame(matrix.loc['Start',:]).reset_index().rename(columns = {'index':'channel',
+                                                                                     'Start':'Removal Effect'})
+            ans = ans.sort_values(by=['Removal Effect'], ascending = False)
+            ans['Normalized Removal Effect'] = np.round(ans['Removal Effect']/ans['Removal Effect'].sum(),3)
         
         return ans
     
