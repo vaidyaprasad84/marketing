@@ -37,26 +37,79 @@ class markov_chain_attribution:
         pivot_df = pivot_df[cols]
         return pivot_df
     
+    
+    def get_markov_reward_value (self, 
+                                 dataframe = pd.DataFrame(), 
+                                 reward_function = [1,0]):
+        tm = self.get_transition_matrix(dataframe)
+        
+        #Base rate calculations
+        array = tm.to_numpy()
+        identity = np.identity(array.shape[0])
+        ans = identity - 0.9999999*array
+        Q = np.linalg.inv(ans)
+        R = np.zeros(array.shape[0])
+        R[-2] = 1
+        R[-1] = 0
+        base = np.round(np.matmul(Q,R.T)/10000000,3)
+        base[-1] = 0.000001 # This is done to for division purpose no that there is non-zero division.
+        
+        channels = tm.columns.tolist()[1:-2]
+        
+        for i in range(len(channels)):
+            array = tm.copy()
+            array[channels[i]] = 0
+            array.loc[channels[i],:] = 0
+            array = array.to_numpy()
+            identity = np.identity(array.shape[0])
+            ans = identity - 0.9999999*array
+            Q = np.linalg.inv(ans)
+            R = np.zeros(array.shape[0])
+            R[-2] = 1
+            R[-1] = 0
+            ans = np.round(np.matmul(Q,R.T)/10000000,3)
+            ans = 1-ans/base
+            
+            if i == 0:
+                final_answer = ans
+            else:
+                final_answer = np.vstack((final_answer,ans))
+            
+        final_answer = np.round(final_answer.T,3)
+        
+        final_answer = pd.DataFrame(final_answer,columns = channels)
+        
+        final_answer = final_answer.set_axis(list(tm.index.values))
+        
+        return final_answer
+    
     def get_removal_effects (self, 
-                             dataframe = pd.DataFrame({})
+                             dataframe = pd.DataFrame({}),
+                             removal_type = 'data'
                             ):
-        conv_df = dataframe[dataframe['conversion']==1]
-        total_conv = conv_df['conversion'].sum()
-        conv_df = conv_df[['user_id']]
-        conv_df = pd.merge(dataframe,conv_df,on = 'user_id', how = 'inner')
-        channel_list = dataframe['channel'].value_counts().index.tolist()
         
-        removal_effect = []
+        if removal_type == 'data':
+            conv_df = dataframe[dataframe['conversion']==1]
+            total_conv = conv_df['conversion'].sum()
+            conv_df = conv_df[['user_id']]
+            conv_df = pd.merge(dataframe,conv_df,on = 'user_id', how = 'inner')
+            channel_list = dataframe['channel'].value_counts().index.tolist()
+
+            removal_effect = []
+
+            for channel in channel_list:
+                removal_effect.append(conv_df[conv_df['channel']==channel]['user_id'].nunique())
+
+            norm_removal_effect = np.array(removal_effect)
+            norm_removal_effect = norm_removal_effect/sum(norm_removal_effect)
+            removal_effect = [x/total_conv for x in removal_effect]
+
+            ans = pd.DataFrame({'channel':channel_list, 'Removal Effect':removal_effect, 
+                                'Normalized Removal Effect':norm_removal_effect})
         
-        for channel in channel_list:
-            removal_effect.append(conv_df[conv_df['channel']==channel]['user_id'].nunique())
-        
-        norm_removal_effect = np.array(removal_effect)
-        norm_removal_effect = norm_removal_effect/sum(norm_removal_effect)
-        removal_effect = [x/total_conv for x in removal_effect]
-        
-        ans = pd.DataFrame({'channel':channel_list, 'Removal Effect':removal_effect, 
-                            'Normalized Removal Effect':norm_removal_effect})
+        elif removal_type == 'transition_matrix':
+            matrix = self.get_markov_reward_value(dataframe)
+            ans = matrix
         
         return ans
     
