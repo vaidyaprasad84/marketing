@@ -20,3 +20,7 @@ Lets take the same example of customer journey as above.
 
 Facebook > Google > Email > Direct > Conversion. The sale credit in this case will go to Direct Channel.
 
+# Last Touch Attribution w/o channel
+
+This is a special case of last touch attribution. In this if the last clicked channel is something we want to ignore we will ignore that and give credit to previous channel. 
+
