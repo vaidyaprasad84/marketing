@@ -1,6 +1,6 @@
 # Heuristics
 
-This module ocntains class called heuristics. 
+This module contains class called heuristics. 
 
 The heuristics class contains rule based methods.
 
@@ -27,4 +27,8 @@ This is a special case of last touch attribution. In this if the last clicked ch
 So if we revisit the journey same as above 
 
 Facebook > Google > Email > Direct > Conversion. The sale credit in this case will go to Email Channel instead of Direct channel. 
+
+However if the journey were: 
+
+Direct > Conversion or Direct > Direct > Converion. Than the sale credit will go to Direct as there is no other channel involved.
 
