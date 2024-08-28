@@ -41,12 +41,28 @@ class markov_chain_attribution:
     def get_markov_reward_value (self, 
                                  dataframe = pd.DataFrame(), 
                                  reward_function = [1,0]):
-        tm = self.get_transition_matrix(dataframe)
+        '''
+        This function follows the previous function. Given that we assume it follows Markov Chain, 
+        we can then use Bellman's equation to calculate the value of being in any state. 
+        
+        The default value will give base conversion rate for starting point as well as base valuation for other channels.
+        
+        Here the default reward function is [1,0]. ie. value = 1 for conversion and value = 0 for non-conversion and 
+        other states. However, we can provide any valuation for each state and thus get a value function and not 
+        necessarily [1,0]. However, in that case, it wont give sale contribution but value of the channel.
+        
+        Given these are all episodic paths (terminate at either conversion or non conversion) we want to choose gamma = 1.
+        However, gamma = 1 will lead to singular matrix and we can't invert singular matrix. Hence, to avoid singularity
+        and to solve Bellman's equation we chose gamma = 0.9999999. See more details in theory section.
+        
+        '''
+        
+        tm = self.get_transition_matrix(dataframe) # transition probability matrix for Markov Chain computations
         
         #Base rate calculations
         array = tm.to_numpy()
         identity = np.identity(array.shape[0])
-        ans = identity - 0.9999999*array
+        ans = identity - 0.9999999*array 
         Q = np.linalg.inv(ans)
         R = np.zeros(array.shape[0])
         R[-2] = 1
