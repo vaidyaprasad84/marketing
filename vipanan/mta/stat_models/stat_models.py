@@ -94,9 +94,7 @@ class markov_chain_attribution:
                 final_answer = np.vstack((final_answer,ans))
             
         final_answer = np.round(final_answer.T,3)
-        
         final_answer = pd.DataFrame(final_answer,columns = channels)
-        
         final_answer = final_answer.set_axis(list(tm.index.values))
         
         return final_answer
@@ -136,12 +134,17 @@ class markov_chain_attribution:
         return ans
     
     def get_markov_attribution (self, 
-                                dataframe=pd.DataFrame({})
+                                dataframe=pd.DataFrame({}),
+                                removal_type = 'data'
                                ):
         conv_df = dataframe[dataframe['conversion']==1]
         total_conv = conv_df['conversion'].sum()
-        removal_effect = self.get_removal_effects(dataframe)
+        if removal_type == 'data':
+            removal_effect = self.get_removal_effects(dataframe)
+        else:
+            removal_effect = self.get_removal_effects(dataframe,removal_type = 'transition_matrix')
         removal_effect['conv_attr'] = removal_effect['Normalized Removal Effect']*total_conv
         removal_effect = removal_effect[['channel','conv_attr']]
+        
         return removal_effect
 
