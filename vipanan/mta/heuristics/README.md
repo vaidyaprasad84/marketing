@@ -33,3 +33,5 @@ However if the journey were:
 Direct > Conversion or Direct > Direct > Converion. Than the sale credit will go to Direct as there is no other channel involved.
 
 # Linear Attribution 
+
+In this model, all the channels in the journey share credit equally irrespective of their position. 
