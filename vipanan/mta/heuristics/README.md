@@ -35,3 +35,7 @@ Direct > Conversion or Direct > Direct > Converion. Than the sale credit will go
 # Linear Attribution 
 
 In this model, all the channels in the journey share credit equally irrespective of their position. 
+
+So if we revisit the journey same as above 
+
+Facebook > Google > Email > Direct > Conversion. Than all the 4 channels will receive 25% credit for the sale.  
