@@ -39,3 +39,7 @@ In this model, all the channels in the journey share credit equally irrespective
 So if we revisit the journey same as above 
 
 Facebook > Google > Email > Direct > Conversion. Than all the 4 channels will receive 25% credit for the sale.  
+
+# Exponential attribution
+
+In this model, the attribution is position based. However, the last touch channel gets the maximum attribution and first touch channel gets the least attribution with intermediate channels getting attribution in descending order from last to first. 
